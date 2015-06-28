@@ -12,13 +12,16 @@ import (
 
 const (
 	version = "0.1"
-	usage   = `open container runtime
+	usage   = `Open Container Project runtime
+
+runc is a command line client for running applications packaged according to the Open Container Format (OCF) and is
+a compliant implementation of the Open Container Project specification.
 
 runc integrates well with existing process supervisors to provide a production container runtime environment for
-applications.  It can be used with your existing process monitoring tools and the container will be spawned as direct 
-child of the process supervisor.  nsinit can be used to manage the lifetime of a single container.
+applications. It can be used with your existing process monitoring tools and the container will be spawned as a direct
+child of the process supervisor.
 
-Execute a simple container in your shell by running: 
+After creating a spec for your root filesystem with runc, you can execute a simple container in your shell by running:
 
     cd /mycontainer
     runc
@@ -33,7 +36,7 @@ func init() {
 		if err := factory.StartInitialization(); err != nil {
 			fatal(err)
 		}
-		panic("--this line should never been executed, congradulations--")
+		panic("--this line should never been executed, congratulations--")
 	}
 }
 
@@ -78,7 +81,6 @@ func main() {
 	// default action is to execute a container
 	app.Action = func(context *cli.Context) {
 		if os.Geteuid() != 0 {
-			cli.ShowAppHelp(context)
 			logrus.Fatal("runc should be run as root")
 		}
 		spec, err := loadSpec(context.Args().First())
@@ -87,12 +89,13 @@ func main() {
 		}
 		status, err := execContainer(context, spec)
 		if err != nil {
-			fatal(err)
+			logrus.Fatalf("Container start failed: %v", err)
 		}
 		// exit with the container's exit status so any external supervisor is
 		// notified of the exit with the correct exit status.
 		os.Exit(status)
 	}
+
 	if err := app.Run(os.Args); err != nil {
 		logrus.Fatal(err)
 	}
