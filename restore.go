@@ -1,3 +1,5 @@
+// +build linux
+
 package main
 
 import (
@@ -10,6 +12,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/utils"
+	"github.com/opencontainers/specs"
 )
 
 var restoreCommand = cli.Command{
@@ -21,6 +24,7 @@ var restoreCommand = cli.Command{
 		cli.BoolFlag{Name: "tcp-established", Usage: "allow open tcp connections"},
 		cli.BoolFlag{Name: "ext-unix-sk", Usage: "allow external unix sockets"},
 		cli.BoolFlag{Name: "shell-job", Usage: "allow shell jobs"},
+		cli.BoolFlag{Name: "file-locks", Usage: "handle file locks, for safety"},
 	},
 	Action: func(context *cli.Context) {
 		imagePath := context.String("image-path")
@@ -43,7 +47,7 @@ var restoreCommand = cli.Command{
 	},
 }
 
-func restoreContainer(context *cli.Context, spec *LinuxSpec, config *configs.Config, imagePath string) (code int, err error) {
+func restoreContainer(context *cli.Context, spec *specs.LinuxSpec, config *configs.Config, imagePath string) (code int, err error) {
 	rootuid := 0
 	factory, err := loadFactory(context)
 	if err != nil {
@@ -81,7 +85,7 @@ func restoreContainer(context *cli.Context, spec *LinuxSpec, config *configs.Con
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
-	tty, err := newTty(spec.Processes[0].TTY, process, rootuid)
+	tty, err := newTty(spec.Process.Terminal, process, rootuid)
 	if err != nil {
 		return -1, err
 	}
@@ -109,6 +113,7 @@ func criuOptions(context *cli.Context) *libcontainer.CriuOpts {
 		TcpEstablished:          true, // context.Bool("tcp-established"),
 		ExternalUnixConnections: context.Bool("ext-unix-sk"),
 		ShellJob:                context.Bool("shell-job"),
+		FileLocks:               context.Bool("file-locks"),
 	}
 }
 
